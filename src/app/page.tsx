@@ -1,3 +1,5 @@
+"use client";
+
 import ThreeLayout from "@/three-components/three-layout";
 
 export default function Home() {
