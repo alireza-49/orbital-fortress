@@ -13,18 +13,18 @@ const ThreeLayout = () => {
   return (
     <>
       <Canvas>
-        <ambientLight intensity={5} />
-        <KeyboardControls map={controlsMap}>
-          {/* <Environment
-            background
-            files={"/environment/output_ldr.jpg"}
-            colorSpace='srgb'
-            backgroundBlurriness={0}
-            environmentIntensity={0}
-          /> */}
-          <Perf />
-          <Ship />
-        </KeyboardControls>
+        <ambientLight intensity={10} />
+        {/* <KeyboardControls map={controlsMap}> */}
+        <Environment
+          background
+          files={"/environment/new_output.jpg"}
+          colorSpace='srgb'
+          backgroundBlurriness={0}
+          environmentIntensity={0}
+        />
+        <Perf />
+        <Ship />
+        {/* </KeyboardControls> */}
       </Canvas>
     </>
   );

@@ -1,84 +1,47 @@
-import {
-  PointerLockControls,
-  PointerLockControlsProps,
-  useGLTF,
-  useKeyboardControls,
-} from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { Group, Object3DEventMap, Vector3 } from "three";
-
-const SPEED = 5;
-const ROTATION_SPEED = 1.5;
+import { FlyControls, useGLTF } from "@react-three/drei";
+import { FlyControls as ThreeFlyControls } from "three/examples/jsm/Addons.js";
 
 export default function Ship() {
   const { nodes, materials } = useGLTF("/better-noAni-posi-draco.glb");
   const shipRef = useRef<Group<Object3DEventMap>>(null);
-  const pointerControlRef = useRef(undefined);
-  const [_, getKeys] = useKeyboardControls();
-
-  const velocity = useRef(new Vector3(0, 0, 0));
-  const rotationInput = useRef(new Vector3(0, 0, 0));
-
-  useFrame((state, delta) => {
-    if (!shipRef.current) return;
-    const {
-      forward,
-      backward,
-      strafeLeft,
-      strafeRight,
-      rollLeft,
-      rollRight,
-      pitchUp,
-      pitchDown,
-      yawLeft,
-      yawRight,
-    } = getKeys();
-
-    rotationInput.current.x = (pitchUp ? 1 : 0) - (pitchDown ? 1 : 0); // Pitch (X-axis)
-    rotationInput.current.y = (yawLeft ? 1 : 0) - (yawRight ? 1 : 0); // Yaw (Y-axis)
-    rotationInput.current.z = (rollLeft ? 1 : 0) - (rollRight ? 1 : 0); // Roll (Z-axis)
-
-    shipRef.current.rotation.x +=
-      rotationInput.current.x * ROTATION_SPEED * delta;
-    shipRef.current.rotation.y +=
-      rotationInput.current.y * ROTATION_SPEED * delta;
-    shipRef.current.rotation.z +=
-      rotationInput.current.z * ROTATION_SPEED * delta;
-
-    const thrustDirection = new Vector3(0, 0, 1); // Forward is usually +Z or -Z
-    shipRef.current.getWorldDirection(thrustDirection); // Get the current direction the ship is facing
-
-    // Calculate forward/backward velocity
-    const forwardMovement = (forward ? 1 : 0) - (backward ? 1 : 0);
-    velocity.current
-      .copy(thrustDirection)
-      .multiplyScalar(forwardMovement * SPEED);
-
-    // Handle strafing (local X-axis)
-    const strafeMovement = (strafeLeft ? 1 : 0) - (strafeRight ? 1 : 0);
-
-    // Get the local X-axis (right vector)
-    const rightVector = new Vector3();
-    shipRef.current
-      .localToWorld(rightVector.set(1, 0, 0))
-      .sub(shipRef.current.position);
-
-    velocity.current.add(rightVector.multiplyScalar(strafeMovement * SPEED));
-
-    shipRef.current.position.addScaledVector(velocity.current, delta);
-  });
+  const controlRef = useRef<ThreeFlyControls>(undefined);
 
   return (
     <>
-      <PointerLockControls ref={pointerControlRef} />
-      <group ref={shipRef} dispose={null}>
+      <FlyControls
+        ref={controlRef}
+        makeDefault
+        movementSpeed={10}
+        rollSpeed={Math.PI / 6}
+        onChange={(e) => {
+          const target = e?.target as ThreeFlyControls;
+          if (!shipRef.current || !controlRef.current || !target) return;
+          const controls = controlRef.current;
+          const ship = shipRef.current;
+
+          const worldDirection = new Vector3();
+          controls.object.getWorldDirection(worldDirection);
+
+          const distance = 10; // how far in front of camera
+          const followSpeed = 0.01;
+
+          // Compute target position
+          const targetPos = controls.object.position
+            .clone()
+            .add(worldDirection.multiplyScalar(distance));
+          ship.position.lerp(targetPos, followSpeed);
+          ship.rotation.copy(controls.object.rotation);
+        }}
+      />
+
+      <group ref={shipRef} dispose={null} scale={1}>
         <mesh
           geometry={nodes.StarSparrow_Wing002.geometry}
           material={materials.StarSparrow_Material}
-          position={[-1.769, -2, -3.262]}
           rotation={[0, Math.PI, 1.336]}
-          scale={1}
+          position={[2.5, -3, -8]}
         />
       </group>
     </>
